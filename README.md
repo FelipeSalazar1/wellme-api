@@ -24,7 +24,7 @@ Permite gerenciar usuários, trilhas de aprendizagem, quizzes, progresso, hidrat
 
 ## Como executar
 
-**Pré-requisitos:** Java 21 e Maven 3.8+
+**Pré-requisitos:** Java 20 e Maven 3.8+
 
 ```bash
 cd wellme-api
