@@ -1,0 +1,712 @@
+{
+  "_type": "export",
+  "__export_format": 4,
+  "__export_date": "2026-05-08T00:00:00.000Z",
+  "__export_source": "wellme-api",
+  "resources": [
+
+    {
+      "_id": "wrk_wellme",
+      "_type": "workspace",
+      "name": "WellMe – CarePlus API",
+      "description": "API gamificada de saúde – FIAP 3ESPR Sprint 3 SOA 2026"
+    },
+
+    {
+      "_id": "env_wellme_base",
+      "_type": "environment",
+      "parentId": "wrk_wellme",
+      "name": "Base Environment",
+      "data": {
+        "base_url": "http://localhost:8080",
+        "jwt": "",
+        "user_id": "",
+        "trail_id_hidr": "tr-hidr-0001-0001-000000000001",
+        "trail_id_alim": "tr-alim-0002-0002-000000000002",
+        "trail_id_sono": "tr-sono-0003-0003-000000000003",
+        "trail_id_ment": "tr-ment-0004-0004-000000000004",
+        "trail_id_exer": "tr-exer-0005-0005-000000000005",
+        "phase_id_hidr1": "ph-hidr-001",
+        "phase_id_hidr2": "ph-hidr-002",
+        "phase_id_alim1": "ph-alim-001",
+        "quiz_id_hidr1": "qz-hidr-001",
+        "water_log_id": ""
+      }
+    },
+
+    {
+      "_id": "fld_auth",
+      "_type": "request_group",
+      "parentId": "wrk_wellme",
+      "name": "Auth"
+    },
+    {
+      "_id": "req_login",
+      "_type": "request",
+      "parentId": "fld_auth",
+      "name": "Login (obter JWT — admin/123456)",
+      "method": "POST",
+      "url": "{{ _.base_url }}/auth/login",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"username\": \"admin\",\n  \"password\": \"123456\"\n}"
+      },
+      "headers": [{ "name": "Content-Type", "value": "application/json" }],
+      "description": "Retorna token JWT. Copie o valor de 'token' e cole na variável de ambiente 'jwt'."
+    },
+
+    {
+      "_id": "fld_users",
+      "_type": "request_group",
+      "parentId": "wrk_wellme",
+      "name": "Usuários"
+    },
+    {
+      "_id": "req_list_users",
+      "_type": "request",
+      "parentId": "fld_users",
+      "name": "Listar todos os usuários",
+      "method": "GET",
+      "url": "{{ _.base_url }}/api/v1/users",
+      "description": "Público — lista todos os usuários cadastrados."
+    },
+    {
+      "_id": "req_get_user",
+      "_type": "request",
+      "parentId": "fld_users",
+      "name": "Buscar usuário por ID",
+      "method": "GET",
+      "url": "{{ _.base_url }}/api/v1/users/{{ _.user_id }}",
+      "description": "Público — preencha user_id no ambiente."
+    },
+    {
+      "_id": "req_register_user",
+      "_type": "request",
+      "parentId": "fld_users",
+      "name": "Cadastrar usuário (público)",
+      "method": "POST",
+      "url": "{{ _.base_url }}/api/v1/users/register",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"name\": \"Maria Souza\",\n  \"email\": \"maria@wellme.com\",\n  \"password\": \"senha1234\"\n}"
+      },
+      "headers": [{ "name": "Content-Type", "value": "application/json" }],
+      "description": "Público. Valida: e-mail único, senha mínimo 8 caracteres. Retorna 201 com o usuário criado. Copie o ID retornado para a variável 'user_id'."
+    },
+    {
+      "_id": "req_update_user",
+      "_type": "request",
+      "parentId": "fld_users",
+      "name": "Atualizar perfil do usuário",
+      "method": "PUT",
+      "url": "{{ _.base_url }}/api/v1/users/{{ _.user_id }}",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"name\": \"Maria Souza Atualizada\",\n  \"photoUrl\": \"https://exemplo.com/foto.jpg\",\n  \"dailyWaterGoalMl\": 2500,\n  \"notificationsEnabled\": true\n}"
+      },
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Authorization", "value": "Bearer {{ _.jwt }}" }
+      ],
+      "description": "Requer JWT. Atualiza nome, foto, meta diária de água e configuração de notificações."
+    },
+    {
+      "_id": "req_delete_user",
+      "_type": "request",
+      "parentId": "fld_users",
+      "name": "Remover usuário",
+      "method": "DELETE",
+      "url": "{{ _.base_url }}/api/v1/users/{{ _.user_id }}",
+      "headers": [{ "name": "Authorization", "value": "Bearer {{ _.jwt }}" }],
+      "description": "Requer JWT. Retorna 204 No Content."
+    },
+    {
+      "_id": "req_dashboard",
+      "_type": "request",
+      "parentId": "fld_users",
+      "name": "Dashboard do usuário",
+      "method": "GET",
+      "url": "{{ _.base_url }}/api/v1/users/{{ _.user_id }}/dashboard",
+      "description": "Público. Exibe: XP, nível, XP para próximo nível, fases concluídas, fases em andamento, badges conquistados, trilhas iniciadas, água consumida hoje vs meta."
+    },
+
+    {
+      "_id": "fld_trails",
+      "_type": "request_group",
+      "parentId": "wrk_wellme",
+      "name": "Trilhas & Fases"
+    },
+    {
+      "_id": "req_list_trails",
+      "_type": "request",
+      "parentId": "fld_trails",
+      "name": "Listar trilhas ativas",
+      "method": "GET",
+      "url": "{{ _.base_url }}/api/v1/trails",
+      "description": "Público. Retorna as 5 trilhas do seed: Hidratação, Alimentação, Sono, Saúde Mental, Exercícios."
+    },
+    {
+      "_id": "req_list_all_trails",
+      "_type": "request",
+      "parentId": "fld_trails",
+      "name": "Listar todas as trilhas (incl. inativas)",
+      "method": "GET",
+      "url": "{{ _.base_url }}/api/v1/trails/all",
+      "headers": [{ "name": "Authorization", "value": "Bearer {{ _.jwt }}" }],
+      "description": "Requer JWT. Admin — inclui trilhas desativadas."
+    },
+    {
+      "_id": "req_get_trail",
+      "_type": "request",
+      "parentId": "fld_trails",
+      "name": "Buscar trilha por ID (Hidratação)",
+      "method": "GET",
+      "url": "{{ _.base_url }}/api/v1/trails/{{ _.trail_id_hidr }}",
+      "description": "Público. Usa a trilha de Hidratação do seed."
+    },
+    {
+      "_id": "req_create_trail",
+      "_type": "request",
+      "parentId": "fld_trails",
+      "name": "Criar trilha",
+      "method": "POST",
+      "url": "{{ _.base_url }}/api/v1/trails",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"title\": \"Prevenção de Doenças\",\n  \"description\": \"Aprenda a prevenir as doenças mais comuns com hábitos simples.\",\n  \"category\": \"PREVENCAO\",\n  \"orderIndex\": 6\n}"
+      },
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Authorization", "value": "Bearer {{ _.jwt }}" }
+      ],
+      "description": "Requer JWT. Categorias válidas: HIDRATACAO | ALIMENTACAO | SONO | SAUDE_MENTAL | EXERCICIO | PREVENCAO"
+    },
+    {
+      "_id": "req_update_trail",
+      "_type": "request",
+      "parentId": "fld_trails",
+      "name": "Atualizar trilha",
+      "method": "PUT",
+      "url": "{{ _.base_url }}/api/v1/trails/{{ _.trail_id_hidr }}",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"title\": \"Hidratação Saudável — Atualizada\",\n  \"description\": \"Conteúdo atualizado sobre hidratação.\",\n  \"category\": \"HIDRATACAO\",\n  \"orderIndex\": 1\n}"
+      },
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Authorization", "value": "Bearer {{ _.jwt }}" }
+      ]
+    },
+    {
+      "_id": "req_deactivate_trail",
+      "_type": "request",
+      "parentId": "fld_trails",
+      "name": "Desativar trilha (exclusão lógica)",
+      "method": "DELETE",
+      "url": "{{ _.base_url }}/api/v1/trails/{{ _.trail_id_exer }}",
+      "headers": [{ "name": "Authorization", "value": "Bearer {{ _.jwt }}" }],
+      "description": "Requer JWT. Marca a trilha como inativa (active=false). Usa trilha de Exercícios."
+    },
+    {
+      "_id": "req_list_phases",
+      "_type": "request",
+      "parentId": "fld_trails",
+      "name": "Listar fases da trilha de Hidratação",
+      "method": "GET",
+      "url": "{{ _.base_url }}/api/v1/trails/{{ _.trail_id_hidr }}/phases",
+      "description": "Público. Retorna as 2 fases da trilha de Hidratação do seed."
+    },
+    {
+      "_id": "req_get_phase",
+      "_type": "request",
+      "parentId": "fld_trails",
+      "name": "Buscar fase por ID",
+      "method": "GET",
+      "url": "{{ _.base_url }}/api/v1/trails/phases/{{ _.phase_id_hidr1 }}",
+      "description": "Público. Retorna fase 'Por que se hidratar?' com conteúdo educativo completo."
+    },
+    {
+      "_id": "req_create_phase",
+      "_type": "request",
+      "parentId": "fld_trails",
+      "name": "Criar fase",
+      "method": "POST",
+      "url": "{{ _.base_url }}/api/v1/trails/phases",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"trailId\": \"{{ _.trail_id_alim }}\",\n  \"title\": \"Desafio Diário de Alimentação\",\n  \"content\": \"Os desafios diários ajudam a criar hábitos alimentares saudáveis de forma gradual. Comece substituindo uma refeição processada por uma opção in natura.\",\n  \"xpReward\": 20,\n  \"orderIndex\": 2\n}"
+      },
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Authorization", "value": "Bearer {{ _.jwt }}" }
+      ],
+      "description": "Requer JWT. Cria nova fase na trilha de Alimentação."
+    },
+
+    {
+      "_id": "fld_quiz",
+      "_type": "request_group",
+      "parentId": "wrk_wellme",
+      "name": "Quizzes"
+    },
+    {
+      "_id": "req_get_quiz_by_phase",
+      "_type": "request",
+      "parentId": "fld_quiz",
+      "name": "Buscar quiz da fase (sem gabaritos)",
+      "method": "GET",
+      "url": "{{ _.base_url }}/api/v1/quizzes/phase/{{ _.phase_id_hidr1 }}",
+      "description": "Público. Retorna o quiz com as 5 questões de hidratação. O campo correctOption NÃO é exposto."
+    },
+    {
+      "_id": "req_get_quiz_by_id",
+      "_type": "request",
+      "parentId": "fld_quiz",
+      "name": "Buscar quiz por ID",
+      "method": "GET",
+      "url": "{{ _.base_url }}/api/v1/quizzes/{{ _.quiz_id_hidr1 }}",
+      "description": "Público. Mesmo resultado do endpoint por fase."
+    },
+    {
+      "_id": "req_submit_quiz_perfect",
+      "_type": "request",
+      "parentId": "fld_quiz",
+      "name": "Submeter quiz — 5/5 corretas (score 100%)",
+      "method": "POST",
+      "url": "{{ _.base_url }}/api/v1/quizzes/{{ _.quiz_id_hidr1 }}/submit",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"userId\": \"{{ _.user_id }}\",\n  \"answers\": {\n    \"qq-h001-1\": \"C\",\n    \"qq-h001-2\": \"C\",\n    \"qq-h001-3\": \"B\",\n    \"qq-h001-4\": \"C\",\n    \"qq-h001-5\": \"C\"\n  }\n}"
+      },
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Authorization", "value": "Bearer {{ _.jwt }}" }
+      ],
+      "description": "Requer JWT. ATENÇÃO: inicie a fase antes (POST /progress/start). Score 100% → ganha 25 XP + badge Quiz Master. Resposta inclui: totalQuestions, correctAnswers, scorePercent, xpEarned, totalXp, currentLevel, feedback."
+    },
+    {
+      "_id": "req_submit_quiz_partial",
+      "_type": "request",
+      "parentId": "fld_quiz",
+      "name": "Submeter quiz — 3/5 corretas (score 60%)",
+      "method": "POST",
+      "url": "{{ _.base_url }}/api/v1/quizzes/{{ _.quiz_id_hidr1 }}/submit",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"userId\": \"{{ _.user_id }}\",\n  \"answers\": {\n    \"qq-h001-1\": \"C\",\n    \"qq-h001-2\": \"A\",\n    \"qq-h001-3\": \"B\",\n    \"qq-h001-4\": \"A\",\n    \"qq-h001-5\": \"C\"\n  }\n}"
+      },
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Authorization", "value": "Bearer {{ _.jwt }}" }
+      ],
+      "description": "Requer JWT. Score 60% → ganha 15 XP (25 × 0.6). Feedback: 'Bom esforço! Continue estudando.'"
+    },
+
+    {
+      "_id": "fld_progress",
+      "_type": "request_group",
+      "parentId": "wrk_wellme",
+      "name": "Progresso"
+    },
+    {
+      "_id": "req_start_phase_hidr1",
+      "_type": "request",
+      "parentId": "fld_progress",
+      "name": "Iniciar fase — Hidratação Fase 1",
+      "method": "POST",
+      "url": "{{ _.base_url }}/api/v1/progress/start?userId={{ _.user_id }}&phaseId={{ _.phase_id_hidr1 }}",
+      "headers": [{ "name": "Authorization", "value": "Bearer {{ _.jwt }}" }],
+      "description": "Requer JWT. Cria UserProgress com status IN_PROGRESS e concede 15 XP. Execute este ANTES de submeter o quiz."
+    },
+    {
+      "_id": "req_start_phase_hidr2",
+      "_type": "request",
+      "parentId": "fld_progress",
+      "name": "Iniciar fase — Hidratação Fase 2",
+      "method": "POST",
+      "url": "{{ _.base_url }}/api/v1/progress/start?userId={{ _.user_id }}&phaseId={{ _.phase_id_hidr2 }}",
+      "headers": [{ "name": "Authorization", "value": "Bearer {{ _.jwt }}" }],
+      "description": "Requer JWT. Inicia segunda fase da trilha de Hidratação."
+    },
+    {
+      "_id": "req_start_phase_alim1",
+      "_type": "request",
+      "parentId": "fld_progress",
+      "name": "Iniciar fase — Alimentação Fase 1",
+      "method": "POST",
+      "url": "{{ _.base_url }}/api/v1/progress/start?userId={{ _.user_id }}&phaseId={{ _.phase_id_alim1 }}",
+      "headers": [{ "name": "Authorization", "value": "Bearer {{ _.jwt }}" }],
+      "description": "Requer JWT. Inicia fase da trilha de Alimentação (trilha diferente — necessário para badge Explorador)."
+    },
+    {
+      "_id": "req_get_user_progress",
+      "_type": "request",
+      "parentId": "fld_progress",
+      "name": "Listar progresso do usuário",
+      "method": "GET",
+      "url": "{{ _.base_url }}/api/v1/progress/user/{{ _.user_id }}",
+      "description": "Público. Lista todo o progresso do usuário com status, score e XP ganho em cada fase."
+    },
+    {
+      "_id": "req_get_phase_progress",
+      "_type": "request",
+      "parentId": "fld_progress",
+      "name": "Progresso em fase específica",
+      "method": "GET",
+      "url": "{{ _.base_url }}/api/v1/progress/user/{{ _.user_id }}/phase/{{ _.phase_id_hidr1 }}",
+      "description": "Público. Verifica status de progresso do usuário na fase de Hidratação 1."
+    },
+
+    {
+      "_id": "fld_water",
+      "_type": "request_group",
+      "parentId": "wrk_wellme",
+      "name": "Hidratação (Água)"
+    },
+    {
+      "_id": "req_log_water_300",
+      "_type": "request",
+      "parentId": "fld_water",
+      "name": "Registrar 300ml de água",
+      "method": "POST",
+      "url": "{{ _.base_url }}/api/v1/water/user/{{ _.user_id }}/log",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"amountMl\": 300\n}"
+      },
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Authorization", "value": "Bearer {{ _.jwt }}" }
+      ],
+      "description": "Requer JWT. logDate é opcional — padrão é hoje."
+    },
+    {
+      "_id": "req_log_water_500",
+      "_type": "request",
+      "parentId": "fld_water",
+      "name": "Registrar 500ml de água",
+      "method": "POST",
+      "url": "{{ _.base_url }}/api/v1/water/user/{{ _.user_id }}/log",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"amountMl\": 500\n}"
+      },
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Authorization", "value": "Bearer {{ _.jwt }}" }
+      ]
+    },
+    {
+      "_id": "req_log_water_date",
+      "_type": "request",
+      "parentId": "fld_water",
+      "name": "Registrar água em data específica",
+      "method": "POST",
+      "url": "{{ _.base_url }}/api/v1/water/user/{{ _.user_id }}/log",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"amountMl\": 400,\n  \"logDate\": \"2026-05-07\"\n}"
+      },
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Authorization", "value": "Bearer {{ _.jwt }}" }
+      ],
+      "description": "Requer JWT. Registra consumo retroativo em data específica."
+    },
+    {
+      "_id": "req_water_summary_today",
+      "_type": "request",
+      "parentId": "fld_water",
+      "name": "Resumo diário de água — hoje",
+      "method": "GET",
+      "url": "{{ _.base_url }}/api/v1/water/user/{{ _.user_id }}/summary",
+      "description": "Público. Retorna total do dia, meta, se a meta foi atingida e lista de registros."
+    },
+    {
+      "_id": "req_water_summary_date",
+      "_type": "request",
+      "parentId": "fld_water",
+      "name": "Resumo diário de água — data específica",
+      "method": "GET",
+      "url": "{{ _.base_url }}/api/v1/water/user/{{ _.user_id }}/summary?date=2026-05-07",
+      "description": "Público. Resumo para uma data específica."
+    },
+    {
+      "_id": "req_water_history",
+      "_type": "request",
+      "parentId": "fld_water",
+      "name": "Histórico completo de água",
+      "method": "GET",
+      "url": "{{ _.base_url }}/api/v1/water/user/{{ _.user_id }}/history",
+      "description": "Público. Retorna todos os registros de água do usuário em ordem decrescente."
+    },
+    {
+      "_id": "req_delete_water_log",
+      "_type": "request",
+      "parentId": "fld_water",
+      "name": "Remover registro de água",
+      "method": "DELETE",
+      "url": "{{ _.base_url }}/api/v1/water/user/{{ _.user_id }}/log/{{ _.water_log_id }}",
+      "headers": [{ "name": "Authorization", "value": "Bearer {{ _.jwt }}" }],
+      "description": "Requer JWT. Preencha water_log_id com o ID retornado ao registrar. Retorna 204."
+    },
+
+    {
+      "_id": "fld_badges",
+      "_type": "request_group",
+      "parentId": "wrk_wellme",
+      "name": "Badges & Conquistas"
+    },
+    {
+      "_id": "req_list_badges",
+      "_type": "request",
+      "parentId": "fld_badges",
+      "name": "Listar todos os badges do sistema",
+      "method": "GET",
+      "url": "{{ _.base_url }}/api/v1/badges",
+      "description": "Público. Retorna os 8 badges do seed com título, descrição e critério de conquista."
+    },
+    {
+      "_id": "req_user_badges",
+      "_type": "request",
+      "parentId": "fld_badges",
+      "name": "Badges conquistados pelo usuário",
+      "method": "GET",
+      "url": "{{ _.base_url }}/api/v1/badges/user/{{ _.user_id }}",
+      "description": "Público. Lista badges do usuário com a data em que cada um foi conquistado."
+    },
+
+    {
+      "_id": "fld_erros",
+      "_type": "request_group",
+      "parentId": "wrk_wellme",
+      "name": "Cenários de Erro"
+    },
+    {
+      "_id": "req_err_email_duplicado",
+      "_type": "request",
+      "parentId": "fld_erros",
+      "name": "409 — E-mail duplicado no cadastro",
+      "method": "POST",
+      "url": "{{ _.base_url }}/api/v1/users/register",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"name\": \"Outro Usuário\",\n  \"email\": \"maria@wellme.com\",\n  \"password\": \"outrasenha1\"\n}"
+      },
+      "headers": [{ "name": "Content-Type", "value": "application/json" }],
+      "description": "Espera 409 Conflict — DuplicateEmailException. Rode após já ter cadastrado maria@wellme.com."
+    },
+    {
+      "_id": "req_err_senha_curta",
+      "_type": "request",
+      "parentId": "fld_erros",
+      "name": "400 — Senha muito curta",
+      "method": "POST",
+      "url": "{{ _.base_url }}/api/v1/users/register",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"name\": \"Teste\",\n  \"email\": \"teste@wellme.com\",\n  \"password\": \"123\"\n}"
+      },
+      "headers": [{ "name": "Content-Type", "value": "application/json" }],
+      "description": "Espera 400 Bad Request — Bean Validation: senha deve ter mínimo 8 caracteres."
+    },
+    {
+      "_id": "req_err_user_nao_encontrado",
+      "_type": "request",
+      "parentId": "fld_erros",
+      "name": "404 — Usuário não encontrado",
+      "method": "GET",
+      "url": "{{ _.base_url }}/api/v1/users/00000000-0000-0000-0000-000000000000",
+      "description": "Espera 404 Not Found — ResourceNotFoundException."
+    },
+    {
+      "_id": "req_err_quiz_sem_fase_iniciada",
+      "_type": "request",
+      "parentId": "fld_erros",
+      "name": "404 — Quiz sem fase iniciada",
+      "method": "POST",
+      "url": "{{ _.base_url }}/api/v1/quizzes/{{ _.quiz_id_hidr1 }}/submit",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"userId\": \"{{ _.user_id }}\",\n  \"answers\": {\n    \"qq-h001-1\": \"C\",\n    \"qq-h001-2\": \"C\",\n    \"qq-h001-3\": \"B\",\n    \"qq-h001-4\": \"C\",\n    \"qq-h001-5\": \"C\"\n  }\n}"
+      },
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Authorization", "value": "Bearer {{ _.jwt }}" }
+      ],
+      "description": "Espera 404 Not Found — Fase não foi iniciada. Use POST /progress/start antes de submeter."
+    },
+    {
+      "_id": "req_err_quiz_resubmissao",
+      "_type": "request",
+      "parentId": "fld_erros",
+      "name": "409 — Resubmissão de quiz",
+      "method": "POST",
+      "url": "{{ _.base_url }}/api/v1/quizzes/{{ _.quiz_id_hidr1 }}/submit",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"userId\": \"{{ _.user_id }}\",\n  \"answers\": {\n    \"qq-h001-1\": \"A\",\n    \"qq-h001-2\": \"A\",\n    \"qq-h001-3\": \"A\",\n    \"qq-h001-4\": \"A\",\n    \"qq-h001-5\": \"A\"\n  }\n}"
+      },
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Authorization", "value": "Bearer {{ _.jwt }}" }
+      ],
+      "description": "Espera 409 Conflict — QuizAlreadySubmittedException. Execute após já ter submetido o quiz."
+    },
+    {
+      "_id": "req_err_opcao_invalida",
+      "_type": "request",
+      "parentId": "fld_erros",
+      "name": "400 — Opção de resposta inválida",
+      "method": "POST",
+      "url": "{{ _.base_url }}/api/v1/quizzes/{{ _.quiz_id_hidr1 }}/submit",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"userId\": \"{{ _.user_id }}\",\n  \"answers\": {\n    \"qq-h001-1\": \"E\",\n    \"qq-h001-2\": \"C\",\n    \"qq-h001-3\": \"B\",\n    \"qq-h001-4\": \"C\",\n    \"qq-h001-5\": \"C\"\n  }\n}"
+      },
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Authorization", "value": "Bearer {{ _.jwt }}" }
+      ],
+      "description": "Espera 400 Bad Request — InvalidAnswerException: opção 'E' é inválida (aceita apenas A, B, C ou D)."
+    },
+    {
+      "_id": "req_err_sem_jwt",
+      "_type": "request",
+      "parentId": "fld_erros",
+      "name": "401 — Sem autenticação",
+      "method": "POST",
+      "url": "{{ _.base_url }}/api/v1/trails",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"title\": \"Trilha sem auth\",\n  \"category\": \"PREVENCAO\"\n}"
+      },
+      "headers": [{ "name": "Content-Type", "value": "application/json" }],
+      "description": "Espera 401 Unauthorized — nenhum header Authorization enviado."
+    },
+    {
+      "_id": "req_err_agua_negativa",
+      "_type": "request",
+      "parentId": "fld_erros",
+      "name": "400 — Quantidade de água inválida",
+      "method": "POST",
+      "url": "{{ _.base_url }}/api/v1/water/user/{{ _.user_id }}/log",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"amountMl\": 0\n}"
+      },
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Authorization", "value": "Bearer {{ _.jwt }}" }
+      ],
+      "description": "Espera 400 Bad Request — Bean Validation: amountMl deve ser maior que zero."
+    },
+
+    {
+      "_id": "fld_flow",
+      "_type": "request_group",
+      "parentId": "wrk_wellme",
+      "name": "Fluxo Completo (passo a passo)"
+    },
+    {
+      "_id": "req_flow_1",
+      "_type": "request",
+      "parentId": "fld_flow",
+      "name": "1. Cadastrar usuário",
+      "method": "POST",
+      "url": "{{ _.base_url }}/api/v1/users/register",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"name\": \"Estudante FIAP\",\n  \"email\": \"estudante@fiap.com\",\n  \"password\": \"fiap2026!\"\n}"
+      },
+      "headers": [{ "name": "Content-Type", "value": "application/json" }],
+      "description": "PASSO 1: Cadastre o usuário. Copie o ID retornado para a variável 'user_id' no ambiente."
+    },
+    {
+      "_id": "req_flow_2",
+      "_type": "request",
+      "parentId": "fld_flow",
+      "name": "2. Fazer login (obter JWT)",
+      "method": "POST",
+      "url": "{{ _.base_url }}/auth/login",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"username\": \"admin\",\n  \"password\": \"123456\"\n}"
+      },
+      "headers": [{ "name": "Content-Type", "value": "application/json" }],
+      "description": "PASSO 2: Faça login. Copie o token retornado para a variável 'jwt' no ambiente."
+    },
+    {
+      "_id": "req_flow_3",
+      "_type": "request",
+      "parentId": "fld_flow",
+      "name": "3. Ver trilhas disponíveis",
+      "method": "GET",
+      "url": "{{ _.base_url }}/api/v1/trails",
+      "description": "PASSO 3: Veja as trilhas disponíveis. Escolha uma fase para iniciar."
+    },
+    {
+      "_id": "req_flow_4",
+      "_type": "request",
+      "parentId": "fld_flow",
+      "name": "4. Iniciar fase de Hidratação",
+      "method": "POST",
+      "url": "{{ _.base_url }}/api/v1/progress/start?userId={{ _.user_id }}&phaseId=ph-hidr-001",
+      "headers": [{ "name": "Authorization", "value": "Bearer {{ _.jwt }}" }],
+      "description": "PASSO 4: Inicie a fase (ganha 15 XP). Obrigatório antes de submeter o quiz."
+    },
+    {
+      "_id": "req_flow_5",
+      "_type": "request",
+      "parentId": "fld_flow",
+      "name": "5. Ver quiz da fase",
+      "method": "GET",
+      "url": "{{ _.base_url }}/api/v1/quizzes/phase/ph-hidr-001",
+      "description": "PASSO 5: Visualize as perguntas do quiz (sem gabaritos)."
+    },
+    {
+      "_id": "req_flow_6",
+      "_type": "request",
+      "parentId": "fld_flow",
+      "name": "6. Submeter quiz (100%)",
+      "method": "POST",
+      "url": "{{ _.base_url }}/api/v1/quizzes/qz-hidr-001/submit",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"userId\": \"{{ _.user_id }}\",\n  \"answers\": {\n    \"qq-h001-1\": \"C\",\n    \"qq-h001-2\": \"C\",\n    \"qq-h001-3\": \"B\",\n    \"qq-h001-4\": \"C\",\n    \"qq-h001-5\": \"C\"\n  }\n}"
+      },
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Authorization", "value": "Bearer {{ _.jwt }}" }
+      ],
+      "description": "PASSO 6: Submeta o quiz com todas as respostas corretas. Ganha 25 XP + badge 'Quiz Master' + badge 'Primeira Fase'."
+    },
+    {
+      "_id": "req_flow_7",
+      "_type": "request",
+      "parentId": "fld_flow",
+      "name": "7. Registrar água do dia",
+      "method": "POST",
+      "url": "{{ _.base_url }}/api/v1/water/user/{{ _.user_id }}/log",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"amountMl\": 500\n}"
+      },
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Authorization", "value": "Bearer {{ _.jwt }}" }
+      ],
+      "description": "PASSO 7: Registre consumo de água."
+    },
+    {
+      "_id": "req_flow_8",
+      "_type": "request",
+      "parentId": "fld_flow",
+      "name": "8. Ver dashboard final",
+      "method": "GET",
+      "url": "{{ _.base_url }}/api/v1/users/{{ _.user_id }}/dashboard",
+      "description": "PASSO 8: Veja seu progresso completo: XP acumulado, nível atual, fases concluídas, badges, água do dia."
+    }
+
+  ]
+}
