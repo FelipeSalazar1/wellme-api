@@ -260,36 +260,57 @@ para verificar e conceder badges elegíveis de forma automática e idempotente.
 
 ---
 
-## Diagrama de Camadas
+# Diagramas
+ 
+---
 
+## 1. Arquitetura em Camadas
+
+```mermaid
+graph TD
+    A[Cliente - App / Insomnia] --> B[Controller]
+    B --> C[Service]
+    C --> D[Repository]
+    D --> E[(H2 Database)]
 ```
-┌──────────────────────────────────────────────────┐
-│                  HTTP Clients                    │
-│         (Insomnia / Postman / App Mobile)        │
-└─────────────────────┬────────────────────────────┘
-                      │
-┌─────────────────────▼────────────────────────────┐
-│           Controller Layer                       │
-│  Auth | User | Trail | Quiz | Progress           │
-│  Water | Badge                                   │
-└─────────────────────┬────────────────────────────┘
-                      │ DTOs
-┌─────────────────────▼────────────────────────────┐
-│            Service Layer                         │
-│  UserService | TrailService | QuizService        │
-│  ProgressService | WaterService | BadgeService   │
-│  ← Regras de negócio, XP, badges aqui →         │
-└─────────────────────┬────────────────────────────┘
-                      │ Entities
-┌─────────────────────▼────────────────────────────┐
-│           Repository Layer (Spring Data JPA)     │
-│  UserRepository | TrailRepository | PhaseRepo    │
-│  QuizRepository | QuestionRepository             │
-│  UserProgressRepository | WaterLogRepository     │
-│  BadgeRepository | UserBadgeRepository           │
-└─────────────────────┬────────────────────────────┘
-                      │
-┌─────────────────────▼────────────────────────────┐
-│          H2 in-memory  (Flyway migrations)       │
-└──────────────────────────────────────────────────┘
+ 
+---
+
+## 2. Diagrama de Entidades ER
+
+```mermaid
+erDiagram
+    USERS ||--o{ USER_PROGRESS : "realiza"
+    USERS ||--o{ WATER_LOGS    : "registra"
+    USERS ||--o{ USER_BADGES   : "conquista"
+    TRAILS ||--o{ PHASES       : "possui"
+    PHASES ||--o| QUIZZES      : "possui"
+    QUIZZES ||--o{ QUESTIONS   : "contém"
+    PHASES ||--o{ USER_PROGRESS : "referenciada em"
+    BADGES ||--o{ USER_BADGES  : "concedida em"
 ```
+ 
+---
+
+## 3. Casos de Uso
+
+```mermaid
+graph LR
+    U((Usuário))
+    A((Admin))
+ 
+    U --> C1[Cadastrar e fazer login]
+    U --> C2[Ver e editar perfil]
+    U --> C3[Ver dashboard]
+    U --> C4[Explorar trilhas e fases]
+    U --> C5[Iniciar fase e ganhar XP]
+    U --> C6[Responder quiz]
+    U --> C7[Registrar água diária]
+    U --> C8[Ver badges conquistados]
+ 
+    A --> D1[Criar e editar trilhas]
+    A --> D2[Criar e editar fases]
+```
+ 
+---
+ 
